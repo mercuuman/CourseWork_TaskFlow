@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Авторизация</title>
+    <link rel="stylesheet" href="/static/css/Autorization.css">
+</head>
+<body>
+<div class="login-container">
+    <div class="left-panel"></div>
+    <div class="right-panel">
+        <img src="/static/logo.png" alt="Логотип" class="logo">
+        <h2>Вход в систему</h2>
+        <form id="loginForm">
+            <div class="input-group">
+                <input type="text" id="username" name="username" placeholder="Имя пользователя" required>
+            </div>
+            <div class="input-group">
+                <input type="password" id="password" name="password" placeholder="Пароль" required>
+            </div>
+            <button type="submit">Войти</button>
+            <p class="signup-link">Нет аккаунта? <a href="javascript:void(0)" id="signupLink">Создайте его</a></p>
+        </form>
+    </div>
+</div>
+
+<script>
+    document.getElementById('loginForm').addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+        const response = await fetch('/login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ username, password })
+        });
+
+        if (response.ok) {
+            alert('Успешная авторизация');
+        } else {
+            alert('Неверное имя пользователя или пароль');
+        }
+    });
+
+    // Редирект на страницу регистрации при клике на ссылку
+    document.getElementById('signupLink').addEventListener('click', () => {
+        window.location.href = '/signup';  // Перенаправление на страницу регистрации
+    });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Регистрация</title>
+  <link rel="stylesheet" href="static/css/Autorization.css">
+</head>
+<body>
+<div class="login-container">
+  <div class="left-panel"></div>
+  <div class="right-panel">
+    <img src="static/logo.png" alt="Логотип" class="logo">
+    <h2>Регистрация</h2>
+    <div id="errorMessage" style="display: none; color: red;"></div>
+    <form id="signupForm" action="/signup" method="post">
+      <div class="input-group">
+        <input type="email" id="email" name="email" placeholder="Email" required>
+      </div>
+      <div class="input-group">
+        <input type="text" id="username" name="username" placeholder="Имя пользователя" required>
+      </div>
+      <div class="input-group">
+        <input type="password" id="password" name="password" placeholder="Пароль" required>
+      </div>
+      <div class="input-group">
+        <input type="password" id="confirm_password" name="confirm_password" placeholder="Подтвердите пароль" required>
+      </div>
+      <button type="submit">Зарегистрироваться</button>
+      <p class="signup-link">Уже есть аккаунт? <a href="javascript:void(0)" id="loginLink">Войдите здесь</a></p>
+    </form>
+  </div>
+</div>
+
+<script>
+  document.getElementById('signupForm').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const errorElement = document.getElementById("errorMessage");
+    errorElement.style.display = "none"; // Скрываем ошибку перед новым запросом
+    console.log('Форма отправлена'); // Проверка, срабатывает ли обработчик
+
+    const email = document.getElementById('email').value;
+    const username = document.getElementById('username').value;
+    const password = document.getElementById('password').value;
+    const confirmPassword = document.getElementById('confirm_password').value;
+
+    if (password !== confirmPassword) {
+      alert('Пароли не совпадают');
+      console.log('Пароли не совпадают'); // Отладка
+      return;
+    }
+
+    try {
+      const response = await fetch('http://localhost:8080/signup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ email, username, password })
+      });
+
+      if (response.ok) {
+        // Если регистрация прошла успешно, перенаправляем на страницу входа
+        alert("Регистрация прошла успешно!");
+        window.location.href = "/login";  // Редирект на страницу входа
+      } else {
+        const errorMessage = await response.text();
+        document.getElementById("errorMessage").innerText = errorMessage;
+        document.getElementById("errorMessage").style.display = 'block';
+      }
+    } catch (error) {
+      document.getElementById("errorMessage").innerText = "Ошибка подключения к серверу. Пожалуйста, попробуйте позже.";
+      document.getElementById("errorMessage").style.display = 'block';
+    }
+  });
+
+  // Редирект при нажатии на ссылку "Войдите здесь"
+  document.getElementById('loginLink').addEventListener('click', () => {
+    window.location.href = "/login";  // Редирект на страницу входа
+  });
+</script>
+
+</body>
+</html>

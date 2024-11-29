@@ -1,0 +1,156 @@
+/* Autorization.css */
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Arial', sans-serif;
+}
+
+body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    background-color: #f7f6f2 ;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+.logo {
+    display: block;
+    margin: 0 auto 0px auto; /* Центрирует логотип и добавляет отступ снизу */
+    width: 100px; /* Задайте желаемый размер логотипа */
+    height: auto; /* Сохраняет пропорции логотипа */
+}
+
+.login-container {
+    display: flex;
+    width: 500px;
+    height: 500px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+    overflow: hidden;
+    background-color: #ffffff;
+}
+
+.left-panel {
+    background: linear-gradient(135deg, #3a5a40, #588157, #a3b18a);
+    width: 150px;
+}
+
+.right-panel {
+    flex: 1;
+    padding: 40px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+
+    flex-grow: 1;
+    min-height: 400px; /* Установите минимальную высоту для стабильности */
+    box-sizing: border-box; /* Учитывайте отступы в размерах */
+
+}
+
+h2 {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 20px;
+    color: #333;
+    font-family: 'Segoe UI', sans-serif;
+    text-align: center;
+}
+
+.input-group {
+    margin-bottom: 20px;
+    flex-grow: 1; /* Чтобы элементы расширялись */
+}
+
+.input-group input {
+    width: 100%;
+    padding: 10px;
+    border-radius: 5px;
+    border: 1px solid #ddd;
+    font-size: 16px;
+    font-family: 'Segoe UI', sans-serif;
+    color: #333;
+    background-color: #f9f9f9;
+}
+
+.input-group input::placeholder {
+    color: #aaa;
+    font-size: 14px;
+}
+
+button[type="submit"] {
+    width: 100%;
+    padding: 12px;
+    background-color: #3a5a40;
+    color: #fff;
+    font-size: 16px;
+    font-weight: 600;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    font-family: 'Segoe UI', sans-serif;
+}
+
+button[type="submit"]:hover {
+    background-color: #344e41;
+}
+
+.signup-link {
+    text-align: center;
+    font-size: 14px;
+    color: #666;
+    margin-top: 15px;
+}
+
+.signup-link a {
+    color: #3a5a40;
+    text-decoration: none;
+}
+
+.signup-link a:hover {
+    text-decoration: underline;
+}
+
+
+
+/* Стили для формы регистрации */
+#signupForm .input-group {
+    margin-bottom: 10px; /* Уменьшает отступы между полями */
+}
+
+
+
+#signupForm .input-group input {
+    border: 1px solid #ddd;
+    padding: 10px;
+    width: 100%; /* Поля будут занимать всю ширину контейнера */
+    box-sizing: border-box; /* Учитывайте отступы в ширине */
+}
+
+/* Общие стили для контейнера, чтобы элементы не выходили за пределы */
+.login-container {
+    max-width: 600px; /* Ограничивает ширину контейнера */
+    margin: auto;
+    overflow-y: hidden; /* Добавляет вертикальную прокрутку */
+    max-height: 90vh; /* Ограничивает высоту, чтобы контейнер не превышал высоту экрана */
+}
+
+/* Общие стили для кнопки */
+button {
+    padding: 10px 20px;
+    font-size: 14px;
+    border-radius: 5px;
+}
+#errorMessage {
+    color: red;
+    font-size: 14px;
+    text-align: center;
+    width: 100%;
+    margin-bottom: 10px;
+}
+
+
+
