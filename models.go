@@ -15,3 +15,10 @@ type SignUpRequest struct {
 	Password string `json:"password"`
 	//ConfirmPassword string `json:"confirm_password"`
 }
+
+// Структура для создания блокнота
+type Notebook struct {
+	UserID    int    `json:"user_id"`
+	Name      string `json:"name"`
+	UpdatedAt string `json:"updated_at"`
+}

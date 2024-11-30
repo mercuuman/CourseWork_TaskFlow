@@ -26,6 +26,13 @@ func initDB() error {
 	return nil
 }
 
+// Закрытие подключения к базе данных
+func closeDB() {
+	if db != nil {
+		db.Close()
+	}
+}
+
 // Функция для добавления пользователя в базу данных
 func insertUser(user User) error {
 	// Логирование данных перед вставкой
@@ -49,11 +56,4 @@ func insertUser(user User) error {
 	}
 	log.Println("User inserted into DB successfully")
 	return nil
-}
-
-// Закрытие подключения к базе данных
-func closeDB() {
-	if db != nil {
-		db.Close()
-	}
 }
