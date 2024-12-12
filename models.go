@@ -16,6 +16,12 @@ type SignUpRequest struct {
 	//ConfirmPassword string `json:"confirm_password"`
 }
 
+// Структура для обработки данных авторизации
+type LoginRequest struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+
 // Структура для создания блокнота
 type Notebook struct {
 	UserID    int    `json:"user_id"`

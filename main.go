@@ -41,34 +41,44 @@ func main() {
 
 	mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
 
-	// Настройка маршрутов
-	mux.HandleFunc("/signup", func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case http.MethodGet:
-			SignUpGetHandler(w, r)
-		case http.MethodPost:
-			SignUpPostHandler(w, r)
-		default:
-			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
-		}
-	})
-	mux.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/refresh-token", refreshTokenHandler) //получение access токена
+
+	mux.HandleFunc("/profile", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
 			LogInGetHandler(w, r)
-		case http.MethodPost:
-			//SignUpPostHandler(w, r)
-		default:
-			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+
+			// Настройка маршрутов
+			mux.HandleFunc("/signup", func(w http.ResponseWriter, r *http.Request) {
+				switch r.Method {
+				case http.MethodGet:
+					SignUpGetHandler(w, r)
+				case http.MethodPost:
+					SignUpPostHandler(w, r)
+				default:
+					http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+				}
+			})
+			mux.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) {
+				switch r.Method {
+				case http.MethodGet:
+					LogInGetHandler(w, r)
+				case http.MethodPost:
+					LoginPostHandler(w, r)
+					//SignUpPostHandler(w, r)
+				default:
+					http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+				}
+			})
+
+			// Применение CORS middleware ко всем маршрутам
+			handlerWithCORS := corsMiddleware(mux)
+
+			// Запуск сервера
+			log.Println("Сервер запущен на http://localhost:8080")
+			if err := http.ListenAndServe(":8080", handlerWithCORS); err != nil {
+				log.Fatalf("Ошибка запуска сервера: %v", err)
+			}
 		}
-	})
-
-	// Применение CORS middleware ко всем маршрутам
-	handlerWithCORS := corsMiddleware(mux)
-
-	// Запуск сервера
-	log.Println("Сервер запущен на http://localhost:8080")
-	if err := http.ListenAndServe(":8080", handlerWithCORS); err != nil {
-		log.Fatalf("Ошибка запуска сервера: %v", err)
 	}
 }

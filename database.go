@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -56,4 +57,25 @@ func insertUser(user User) error {
 	}
 	log.Println("User inserted into DB successfully")
 	return nil
+}
+
+// Функция для поиска пользователя в бд
+func findUser(user *User) (bool, int, error) {
+	// Выполняем запрос, чтобы получить id пользователя, если существует такая пара username и password
+	query := "SELECT id FROM users WHERE username = $1 AND password = $2 LIMIT 1"
+	var userID int
+
+	// Если пользователь найден, возвращаем его id и состояние существования
+	err := db.QueryRow(context.Background(), query, user.Username, user.Password).Scan(&userID)
+	if err != nil {
+		// Если пользователь не найден, возвращаем false
+		if err == sql.ErrNoRows {
+			return false, 0, nil // Пользователь не найден
+		}
+		// Если ошибка другая, возвращаем её
+		return false, 0, err
+	}
+
+	// Если мы получаем id, значит, пользователь существует
+	return true, userID, nil
 }

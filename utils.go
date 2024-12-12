@@ -1,79 +1,105 @@
 package main
 
 import (
-	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/golang-jwt/jwt"
+	"log"
 	"net/http"
+	"strings"
 	"time"
 )
 
-var jwtSecret = []byte("TaskMasterTaskFlowCourseWork")
+var (
+	accessSecret    = []byte("TaskMasterTaskFlowCourseWork") // Секретный ключ для подписи токенов
+	refreshSecret   = []byte("7daysitsonlytimewhenwelive")
+	accessTokenTTL  = time.Minute * 15   // Время жизни токена доступа
+	refreshTokenTTL = time.Hour * 24 * 7 // Время жизни токена обновления
+)
 
 // Middleware для проверки JWT
-func AuthMiddleware(next http.Handler) http.Handler {
+func authMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// 1. Получение заголовка Authorization
 		authHeader := r.Header.Get("Authorization")
-		if authHeader == "" || len(authHeader) < 7 || authHeader[:7] != "Bearer " {
-			http.Error(w, "Missing or invalid token", http.StatusUnauthorized)
+		if authHeader == "" {
+			http.Error(w, "Missing Authorization header", http.StatusUnauthorized)
 			return
 		}
 
-		tokenString := authHeader[7:]
+		// 2. Извлечение токена (удаление префикса "Bearer ")
+		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
 
-		// Разбор токена
-		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-				return nil, fmt.Errorf("unexpected signing method: %v", token.Method)
-			}
-			return jwtSecret, nil
-		})
-
+		// 3. Валидация токена
+		claims, err := validateToken(tokenString, accessSecret)
 		if err != nil {
-			http.Error(w, fmt.Sprintf("Token parsing error: %v", err), http.StatusUnauthorized)
+			http.Error(w, "Invalid token: "+err.Error(), http.StatusUnauthorized)
 			return
 		}
 
-		if !token.Valid {
-			http.Error(w, "Invalid token", http.StatusUnauthorized)
-			return
-		}
-
-		// Извлечение данных токена
-		claims, ok := token.Claims.(jwt.MapClaims)
-		if !ok {
-			http.Error(w, "Invalid token claims", http.StatusUnauthorized)
-			return
-		}
-
-		// Проверка истечения токена
-		if exp, ok := claims["exp"].(float64); ok {
-			if time.Unix(int64(exp), 0).Before(time.Now()) {
-				http.Error(w, "Token expired", http.StatusUnauthorized)
-				return
-			}
-		}
-
-		// Извлечение userID из токена
-		userID, ok := claims["userID"].(string)
-		if !ok {
-			http.Error(w, "Invalid user ID in token", http.StatusUnauthorized)
-			return
-		}
-
-		// Передача userID в контекст
-		ctx := context.WithValue(r.Context(), "userID", userID)
-		next.ServeHTTP(w, r.WithContext(ctx))
+		// 4. Токен валиден, передача управления следующему обработчику
+		fmt.Println("Authenticated user ID:", claims["userID"])
+		next.ServeHTTP(w, r)
 	})
 }
 
-// Генерация JWT токена
-func GenerateJWT(userID string) (string, error) {
-	claims := jwt.MapClaims{
-		"userID": userID,
-		"exp":    time.Now().Add(time.Hour * 24).Unix(), // Токен истекает через 24 часа
+func validateToken(tokenString string, secretKey []byte) (jwt.MapClaims, error) {
+	// 1. Разбор токена
+	token, err := jwt.Parse(tokenString, func(t *jwt.Token) (interface{}, error) {
+		// 1.1 Проверка метода подписи
+		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])
+		}
+		// 1.2 Возврат секретного ключа для проверки подписи
+		return secretKey, nil
+	})
+	if err != nil {
+		return nil, err // Ошибка парсинга токена
 	}
 
+	// 2. Извлечение claims
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok || !token.Valid {
+		return nil, fmt.Errorf("invalid token")
+	}
+
+	// 3. Проверка срока действия токена
+	if exp, ok := claims["ExpiresAt"].(float64); ok {
+		// Если срок действия истёк, возвращаем ошибку
+		if time.Unix(int64(exp), 0).Before(time.Now()) {
+			return nil, fmt.Errorf("token expired")
+		}
+	} else {
+		return nil, fmt.Errorf("invalid expiration field")
+	}
+
+	return claims, nil // Токен валиден, возвращаем claims
+}
+
+func generateAccessToken(userID string) (string, error) {
+	claims := jwt.MapClaims{
+		"userID":    userID,
+		"ExpiresAt": time.Now().Add(accessTokenTTL).Unix(), // Срок действия 15 минут
+		"IssuedAt":  time.Now(),                            // Время создания токена
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims) // Создание токена с алгоритмом HS256
+	return token.SignedString(accessSecret)                    // Подписание токена другим секретным ключом
+}
+
+func generateRefreshToken(userID string) (string, error) {
+	claims := jwt.MapClaims{
+		"userID":    userID,
+		"ExpiresAt": time.Now().Add(refreshTokenTTL).Unix(), // Срок действия 7 дней
+		"IssuedAt":  time.Now(),                             // Время создания токена
+	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString(jwtSecret)
+	return token.SignedString(refreshSecret)
+}
+
+func handleError(w http.ResponseWriter, err error, status int) {
+	log.Println("Error:", err) // Логирование ошибки
+	w.WriteHeader(status)
+	response := map[string]string{"error": err.Error()}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
 }

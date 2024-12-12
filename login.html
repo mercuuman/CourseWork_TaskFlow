@@ -26,6 +26,47 @@
 </div>
 
 <script>
+    // Функция для сохранения токенов
+    function saveTokens(accessToken, refreshToken) {
+        // Сохраняем accessToken в localStorage или sessionStorage (например, для хранения до закрытия браузера)
+        localStorage.setItem('accessToken', accessToken);
+        // refreshToken сохраняем в cookie, HttpOnly
+        document.cookie = `refreshToken=${refreshToken}; path=/; HttpOnly`;
+    }
+
+    // Функция для получения refreshToken из cookie
+    function getRefreshToken() {
+        const match = document.cookie.match(new RegExp('(^| )refreshToken=([^;]+)'));
+        return match ? match[2] : null;
+    }
+
+    // Функция для обновления accessToken с использованием refreshToken
+    async function refreshAccessToken() {
+        const refreshToken = getRefreshToken();
+        if (!refreshToken) {
+            alert('Требуется повторная авторизация');
+            window.location.href = '/login';  // Перенаправление на страницу авторизации
+            return;
+        }
+
+        const response = await fetch('/refresh-token', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ refreshToken }),
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            saveTokens(data.accessToken, data.refreshToken);  // Сохраняем новые токены
+        } else {
+            alert('Ошибка при обновлении токена. Пожалуйста, войдите заново.');
+            window.location.href = '/login';  // Перенаправление на страницу авторизации
+        }
+    }
+
+    // Отправка формы авторизации
     document.getElementById('loginForm').addEventListener('submit', async (event) => {
         event.preventDefault();
         const username = document.getElementById('username').value;
@@ -33,13 +74,16 @@
         const response = await fetch('/login', {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ username, password })
+            body: JSON.stringify({ username, password }),
         });
 
         if (response.ok) {
+            const data = await response.json();  // Получаем токены
+            saveTokens(data.accessToken, data.refreshToken);  // Сохраняем токены
             alert('Успешная авторизация');
+            window.location.href = '/dashboard';  // Перенаправление на страницу после авторизации
         } else {
             alert('Неверное имя пользователя или пароль');
         }
@@ -49,6 +93,7 @@
     document.getElementById('signupLink').addEventListener('click', () => {
         window.location.href = '/signup';  // Перенаправление на страницу регистрации
     });
+
 </script>
 
 </body>
