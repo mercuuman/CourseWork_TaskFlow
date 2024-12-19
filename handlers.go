@@ -13,7 +13,7 @@ import (
 )
 
 func mainPageHandler(w http.ResponseWriter, r *http.Request) {
-	tmpl, err := template.ParseFiles("mainpage.html") // путь к странице регистрации
+	tmpl, err := template.ParseFiles("mainpage.html")
 	if err != nil {
 		fmt.Println(err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)

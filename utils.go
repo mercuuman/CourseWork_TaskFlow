@@ -19,6 +19,34 @@ var (
 	refreshTokenTTL = time.Hour * 24 * 7 // Время жизни токена обновления
 )
 
+// Middleware для обработки CORS и логирования
+func generalMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Логируем запрос
+		log.Printf("Request received: %s %s", r.Method, r.URL.Path)
+
+		// CORS Headers
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+
+		// Если это OPTIONS запрос, сразу отвечаем
+		if r.Method == http.MethodOptions {
+			log.Printf("OPTIONS request for %s", r.URL.Path)
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+
+		// Передаем управление следующему обработчику
+		next.ServeHTTP(w, r)
+	})
+}
+
+// Универсальная функция для обработки маршрутов
+func handleRoute(mux *http.ServeMux, pattern string, handlerFunc func(http.ResponseWriter, *http.Request)) {
+	mux.HandleFunc(pattern, handlerFunc)
+}
+
 // Middleware для проверки JWT УДАЛИТЬ???
 func authMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

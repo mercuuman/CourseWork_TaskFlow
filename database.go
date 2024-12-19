@@ -18,7 +18,7 @@ var (
 
 // Инициализация базы данных
 func initDB() error {
-	connStr := "postgresql://postgres:641@localhost:5432/task_management" // Укажите свои данные
+	connStr := "postgresql://postgres:641@localhost:5432/task_management"
 	pool, err := pgxpool.New(context.Background(), connStr)
 	if err != nil {
 		return fmt.Errorf("ошибка подключения к базе данных: %v", err)
