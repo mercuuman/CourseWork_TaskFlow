@@ -26,12 +26,31 @@
 </div>
 
 <script>
+
+/*
+    fetch('/refresh-token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include', // Важно: передача куки
+    })
+        .then(response => response.json())
+        .then(data => {
+            console.log('Обновление токена успешно:', data);
+            alert(`Новый Access Token: ${data.accessToken}`);
+        })
+        .catch(err => {
+            console.error('Ошибка при обновлении токена:', err);
+            alert('Ошибка при обновлении токена!');
+        });
+
+*/
+
     // Функция для сохранения токенов
     function saveTokens(accessToken, refreshToken) {
         // Сохраняем accessToken в localStorage или sessionStorage (например, для хранения до закрытия браузера)
         localStorage.setItem('accessToken', accessToken);
         // refreshToken сохраняем в cookie, HttpOnly
-        document.cookie = `refreshToken=${refreshToken}; path=/; HttpOnly`;
+        document.cookie = `refreshToken=${refreshToken}; path=/;max-age=604800;`;
     }
 
     // Функция для получения refreshToken из cookie
@@ -54,6 +73,7 @@
             headers: {
                 'Content-Type': 'application/json',
             },
+            credentials: 'include',
             body: JSON.stringify({ refreshToken }),
         });
 
@@ -77,13 +97,14 @@
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({ username, password }),
+            credentials: 'include' // Разрешение на отправку
         });
 
         if (response.ok) {
             const data = await response.json();  // Получаем токены
             saveTokens(data.accessToken, data.refreshToken);  // Сохраняем токены
             alert('Успешная авторизация');
-            window.location.href = '/dashboard';  // Перенаправление на страницу после авторизации
+            window.location.href = '/';  // Перенаправление на главную страницу
         } else {
             alert('Неверное имя пользователя или пароль');
         }

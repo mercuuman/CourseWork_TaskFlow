@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <script src="/static/js/auth.js"></script> <!-- Подключаем файл с validateAccess -->
+</head>
+<body onload="validateAccess()">
+<div id="loading">Loading...</div>
+<div id="profile-content" style="display: none;">
+    <h1>Your Profile</h1>
+    <div>
+        <p><strong>Username:</strong> <span id="username"></span></p>
+        <p><strong>Email:</strong> <span id="email"></span></p>
+        <p><strong>Created At:</strong> <span id="created-at"></span></p>
+    </div>
+    <button id="logout">Logout</button>
+</div>
+<script>
+    document.addEventListener("DOMContentLoaded", async () => {
+        const token = localStorage.getItem("accessToken");
+
+        try {
+            // Запрос данных профиля
+            const response = await fetch("/api/profile", {
+                method: "GET",
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            });
+
+            // Обработка ответа
+            if (response.status === 401) {
+                alert("Сессия истекла. Пожалуйста, войдите снова.");
+                localStorage.removeItem("accessToken");
+                window.location.href = "/login";
+                return;
+            }
+
+            const profile = await response.json();
+
+            // Заполнение данных на странице
+            document.getElementById("username").innerText = profile.username;
+            document.getElementById("email").innerText = profile.email;
+            document.getElementById("created-at").innerText = new Date(profile.created_at).toLocaleString();
+
+            // Показываем содержимое страницы
+            document.getElementById("loading").style.display = "none";
+            document.getElementById("profile-content").style.display = "block";
+        } catch (err) {
+            console.error("Error loading profile:", err);
+            alert("Не удалось загрузить данные профиля.");
+        }
+    });
+
+    // Выход из аккаунта
+    document.getElementById("logout").addEventListener("click", () => {
+        localStorage.removeItem("accessToken");
+        window.location.href = "/login";
+    });
+</script>
+</body>
+</html>

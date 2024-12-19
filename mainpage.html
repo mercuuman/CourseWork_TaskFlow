@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Главная страница</title>
+    <link rel="stylesheet" href="/static/css/mainpage.css">
+</head>
+<body>
+<div class="dashboard-container">
+    <!-- Боковое меню -->
+    <aside class="sidebar">
+        <h2>Ваши блокноты</h2>
+        <ul id="notebooksList">
+            <!-- Здесь будут загружены названия блокнотов -->
+        </ul>
+        <button id="addNotebookBtn">Добавить блокнот</button>
+    </aside>
+
+    <!-- Контейнер для секции страниц -->
+    <div class="main-content">
+        <!-- Секция для страниц блокнота -->
+        <section id="pagesSection" style="display: none;">
+            <h2>Страницы блокнота</h2>
+            <ul id="pagesList">
+                <!-- Здесь будут загружены страницы выбранного блокнота -->
+            </ul>
+            <button id="addPageBtn">Добавить страницу</button>
+        </section>
+
+        <!-- Секция для задач -->
+        <section id="tasksSection" style="display: none;">
+            <h2>Задачи страницы</h2>
+            <ul id="tasksList">
+                <!-- Здесь будут загружены задачи выбранной страницы -->
+            </ul>
+            <button id="addTaskBtn">Добавить задачу</button>
+        </section>
+    </div>
+</div>
+
+<script>
+    let currentNotebookId = null;
+    let currentPageId = null;
+
+    // Универсальная функция для выполнения GET-запросов
+    function fetchData(url, callback) {
+
+        const token = localStorage.getItem('accessToken');
+        fetch(url, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        })
+            .then(response => {
+                if (!response.ok) throw new Error('Ошибка запроса');
+                return response.json();
+            })
+            .then(callback)
+            .catch(error => console.error('Fetch error:', error));
+    }
+
+    // Загрузка блокнотов
+    function loadNotebooks() {
+        fetchData('/api/notebooks', (data) => {
+            const notebooksList = document.getElementById('notebooksList');
+            notebooksList.innerHTML = '';
+
+            if (data.length) {
+                data.forEach(notebook => {
+                    const li = document.createElement('li');
+                    li.dataset.notebookId = notebook.id;
+                    li.innerHTML = `${notebook.name}
+                                    <button class="edit-notebook-btn">Upd</button>
+                                    <button class="delete-notebook-btn">Del</button>`;
+
+                    // Обработчик редактирования блокнота
+                    li.querySelector('.edit-notebook-btn').addEventListener('click', (event) => {
+                        event.stopPropagation();
+                        editNotebook(notebook.id);
+                    });
+
+                    // Обработчик удаления блокнота
+                    li.querySelector('.delete-notebook-btn').addEventListener('click', (event) => {
+                        event.stopPropagation();
+                        deleteNotebook(notebook.id);
+                    });
+
+                    li.addEventListener('click', () => loadPages(notebook.id));
+                    notebooksList.appendChild(li);
+                });
+            } else {
+                notebooksList.innerHTML = '<li>Нет блокнотов</li>';
+            }
+        });
+    }
+
+    // Функция редактирования блокнота
+    function editNotebook(notebookId) {
+        const newName = prompt("Введите новое название блокнота:");
+        if (newName) {
+            const token = localStorage.getItem('accessToken');
+            fetch(`/api/notebooks/${notebookId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ name: newName })
+            })
+                .then(response => response.json())
+                .then(() => loadNotebooks())
+                .catch(error => console.error('Error editing notebook:', error));
+        }
+    }
+
+    // Функция удаления блокнота
+    function deleteNotebook(notebookId) {
+        const token = localStorage.getItem('accessToken');
+        if (confirm('Вы уверены, что хотите удалить этот блокнот?')) {
+            fetch(`/api/notebooks/${notebookId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+                .then(() => loadNotebooks()) // Перезагружаем список блокнотов
+                .catch(error => console.error('Error deleting notebook:', error));
+        }
+    }
+
+    // Добавление блокнота
+    function addNotebook() {
+        const notebookName = prompt("Введите название блокнота:");
+        if (notebookName) {
+            const token = localStorage.getItem('accessToken');
+            fetch('/api/notebooks', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ name: notebookName })
+            })
+                .then(response => response.json())
+                .then(() => loadNotebooks())
+                .catch(error => console.error('Error adding notebook:', error));
+        }
+    }
+
+    // Загрузка страниц для выбранного блокнота
+    function loadPages(notebookId) {
+        currentNotebookId = notebookId;
+
+        fetchData(`/api/pages/${notebookId}`, (data) => {
+            const pagesList = document.getElementById('pagesList');
+            pagesList.innerHTML = '';
+
+            if (data.length) {
+                data.forEach(page => {
+                    const li = document.createElement('li');
+                    li.dataset.pageId = page.id;
+                    li.innerHTML = `${page.title}: ${page.content || 'Нет описания'}
+                                    <button class="edit-page-btn">Upd</button>
+                                    <button class="delete-page-btn">Del</button>`;
+
+                    // Обработчик редактирования страницы
+                    li.querySelector('.edit-page-btn').addEventListener('click', (event) => {
+                        event.stopPropagation();
+                        editPage(page.id);
+                    });
+
+                    // Обработчик удаления страницы
+                    li.querySelector('.delete-page-btn').addEventListener('click', (event) => {
+                        event.stopPropagation();
+                        deletePage(page.id);
+                    });
+
+                    li.addEventListener('click', () => loadTasks(page.id));
+                    pagesList.appendChild(li);
+                });
+            } else {
+                pagesList.innerHTML = '<li>Нет страниц</li>';
+            }
+
+            document.getElementById('pagesSection').style.display = 'block';
+            document.getElementById('tasksSection').style.display = 'none';
+        });
+
+        document.getElementById('addPageBtn').onclick = () => addPage(notebookId);
+    }
+
+    // Функция редактирования страницы
+    function editPage(pageId) {
+        const newTitle = prompt("Введите новое название страницы:");
+        const newContent = prompt("Введите новое описание страницы:");
+        if (newTitle) {
+            const token = localStorage.getItem('accessToken');
+            fetch(`/api/pages/${pageId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ title: newTitle, content: newContent })
+            })
+                .then(() => loadPages(currentNotebookId)) // Перезагружаем страницы
+                .catch(error => console.error('Error editing page:', error));
+        }
+    }
+
+    // Функция удаления страницы
+    function deletePage(pageId) {
+        const token = localStorage.getItem('accessToken');
+        if (confirm('Вы уверены, что хотите удалить эту страницу?')) {
+            fetch(`/api/pages/${pageId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+                .then(() => loadPages(currentNotebookId)) // Перезагружаем страницы
+                .catch(error => console.error('Error deleting page:', error));
+        }
+    }
+
+    // Добавление страницы
+    function addPage(notebookId) {
+        const pageTitle = prompt("Введите название страницы:");
+        const pageContent = prompt("Введите описание страницы:");
+        if (pageTitle) {
+            const token = localStorage.getItem('accessToken');
+            fetch(`/api/pages/?notebook_id=${notebookId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ title: pageTitle, content: pageContent })
+            })
+                .then(() => loadPages(notebookId))
+                .catch(error => console.error('Error adding page:', error));
+        }
+    }
+
+    // Загрузка задач для выбранной страницы
+    function loadTasks(pageId) {
+        currentPageId = pageId;
+
+        fetchData(`/api/tasks/${pageId}`, (data) => {
+            const tasksList = document.getElementById('tasksList');
+            tasksList.innerHTML = '';
+
+            if (data.length) {
+                data.forEach(task => {
+                    const li = document.createElement('li');
+                    li.dataset.taskId = task.id;
+                    li.innerHTML = `${task.title}: ${task.description}
+                                    <button class="edit-task-btn">Upd</button>
+                                    <button class="delete-task-btn">Del</button>`;
+
+                    // Обработчик редактирования задачи
+                    li.querySelector('.edit-task-btn').addEventListener('click', (event) => {
+                        event.stopPropagation();
+                        editTask(task.id);
+                    });
+
+                    // Обработчик удаления задачи
+                    li.querySelector('.delete-task-btn').addEventListener('click', (event) => {
+                        event.stopPropagation();
+                        deleteTask(task.id);
+                    });
+
+                    tasksList.appendChild(li);
+                });
+            } else {
+                tasksList.innerHTML = '<li>Нет задач</li>';
+            }
+
+            document.getElementById('tasksSection').style.display = 'block';
+        });
+
+        document.getElementById('addTaskBtn').onclick = () => addTask(pageId);
+    }
+
+    // Функция редактирования задачи
+    function editTask(taskId) {
+        const newTitle = prompt("Введите новое название задачи:");
+        const newDescription = prompt("Введите новое описание задачи:");
+        if (newTitle) {
+            const token = localStorage.getItem('accessToken');
+            fetch(`/api/tasks/${taskId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ title: newTitle, description: newDescription })
+            })
+                .then(() => loadTasks(currentPageId)) // Перезагружаем задачи
+                .catch(error => console.error('Error editing task:', error));
+        }
+    }
+
+    // Добавление задачи
+    function addTask(pageId) {
+        const taskTitle = prompt("Введите название задачи:");
+        const taskDescription = prompt("Введите описание задачи:");
+        if (taskTitle && taskDescription) {
+            const token = localStorage.getItem('accessToken');
+            fetch(`/api/tasks/?page_id=${pageId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ title: taskTitle, description: taskDescription })
+            })
+                .then(() => loadTasks(pageId))
+                .catch(error => console.error('Error adding task:', error));
+        }
+    }
+
+    // Функция удаления задачи
+    function deleteTask(taskId) {
+        const token = localStorage.getItem('accessToken');
+        if (confirm('Вы уверены, что хотите удалить эту задачу?')) {
+            fetch(`/api/tasks/${taskId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+                .then(() => loadTasks(currentPageId)) // Перезагружаем задачи
+                .catch(error => console.error('Error deleting task:', error));
+        }
+    }
+
+    let isTokenRefreshed = false;
+
+    function verifyAccessToken() {
+        const token = localStorage.getItem('accessToken');
+        if (token) {
+            // Попробуем обновить токен, если он есть
+            refreshAccessToken();
+        } else {
+            // Если нет токена, сразу редиректим на логин
+            window.location.href = '/login';
+        }
+    }
+
+    // Функция для проверки наличия accessToken
+    function checkAccessToken() {
+        const accessToken = localStorage.getItem('accessToken');
+        console.log('AccessToken:', localStorage.getItem('accessToken'));
+
+        // Если токен отсутствует, редирект на страницу логина
+        if (!accessToken) {
+            alert('Требуется авторизация');
+            window.location.href = '/login';  // Перенаправление на страницу логина
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        //await refreshAccessToken(); // Попытка обновить токен
+        //checkAccessToken();         // Проверка наличия токена
+
+        loadNotebooks();            // Загружаем данные
+        //verifyAccessToken();
+        //setInterval(verifyAccessToken, 300000)
+    });
+
+
+    // Будущие функции
+    async function refreshAccessToken() {
+        const refreshToken = getRefreshToken();
+        console.log('RefreshToken:', refreshToken);
+
+        if (!refreshToken) {
+            alert('Требуется повторная авторизация');
+            //window.location.href = '/login';
+            return;
+        }
+
+        try {
+            const response = await fetch('/refresh-token', {
+                method: 'POST',
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ refreshToken }),
+
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                console.log('Received tokens:', data);
+                saveTokens(data.accessToken, data.refreshToken);
+            } else {
+                throw new Error('Ошибка при обновлении токена');
+            }
+
+        } catch (error) {
+            console.error(error);
+            //window.location.href = '/login';  // Если обновить токен не получилось — редирект на страницу логина
+        }
+    }
+    // Функция для получения refreshToken из cookie
+    function getRefreshToken() {
+        const match = document.cookie.match(new RegExp('(^| )refreshToken=([^;]+)'));
+        return match ? match[2] : null;
+    }
+    function saveTokens(accessToken, refreshToken) {
+        localStorage.setItem('accessToken', accessToken);
+        document.cookie = `refreshToken=${refreshToken}; path=/;`;
+    }
+
+
+    // Инициализация
+    document.getElementById('addNotebookBtn').addEventListener('click', addNotebook);
+    loadNotebooks();
+</script>
+</body>
+</html>

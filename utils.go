@@ -1,11 +1,13 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/golang-jwt/jwt"
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -17,7 +19,7 @@ var (
 	refreshTokenTTL = time.Hour * 24 * 7 // Время жизни токена обновления
 )
 
-// Middleware для проверки JWT
+// Middleware для проверки JWT УДАЛИТЬ???
 func authMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// 1. Получение заголовка Authorization
@@ -40,6 +42,42 @@ func authMiddleware(next http.Handler) http.Handler {
 		// 4. Токен валиден, передача управления следующему обработчику
 		fmt.Println("Authenticated user ID:", claims["userID"])
 		next.ServeHTTP(w, r)
+	})
+}
+
+func tokenAuthMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Получаем токен из заголовков
+		token := r.Header.Get("Authorization")
+		if token == "" {
+			// Если токен отсутствует, перенаправляем на страницу логина
+			http.Redirect(w, r, "/login", http.StatusSeeOther)
+			return
+		}
+
+		// Убираем префикс "Bearer" из токена, если он есть
+		token = strings.TrimPrefix(token, "Bearer ")
+
+		// Проверяем токен
+		claims, err := validateToken(token, accessSecret)
+		if err != nil {
+			// Если токен недействителен, перенаправляем на страницу логина
+			http.Redirect(w, r, "/login", http.StatusSeeOther)
+			return
+		}
+
+		// Добавляем информацию о пользователе в контекст
+		userID, ok := claims["userID"].(string)
+		if !ok {
+			http.Error(w, "Invalid token claims", http.StatusUnauthorized)
+			return
+		}
+
+		// Добавляем userID в контекст запроса
+		ctx := context.WithValue(r.Context(), "userID", userID)
+
+		// Вызываем следующий обработчик с обновленным контекстом
+		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
 
@@ -102,4 +140,38 @@ func handleError(w http.ResponseWriter, err error, status int) {
 	response := map[string]string{"error": err.Error()}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
+}
+
+func getUserIDFromToken(r *http.Request) (int, error) {
+	authHeader := r.Header.Get("Authorization")
+	if authHeader == "" {
+		return 0, fmt.Errorf("заголовок Authorization отсутствует")
+	}
+
+	if len(authHeader) < 7 || authHeader[:7] != "Bearer " {
+		return 0, fmt.Errorf("заголовок Authorization некорректен")
+	}
+
+	tokenString := authHeader[7:]
+	log.Println("Extracted token string:", tokenString)
+
+	claims, err := validateToken(tokenString, accessSecret)
+	if err != nil {
+		return 0, fmt.Errorf("неверный токен: %v", err)
+	}
+
+	userIDStr, ok := claims["userID"].(string)
+	if !ok {
+		return 0, fmt.Errorf("userID отсутствует или некорректен: %v", claims["userID"])
+	}
+
+	log.Println("Extracted userID from claims:", userIDStr)
+
+	// Преобразование в int
+	userID, err := strconv.Atoi(userIDStr)
+	if err != nil {
+		return 0, fmt.Errorf("ошибка преобразования userID в int: %v", err)
+	}
+
+	return userID, nil
 }

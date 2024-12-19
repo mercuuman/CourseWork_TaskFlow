@@ -1,0 +1,146 @@
+/* Общие стили */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f7f6f2;
+    color: #333;
+}
+
+/* Стиль для центральной панели */
+.dashboard-container {
+    display: flex;
+    height: 100vh;
+}
+
+/* Боковая панель */
+.sidebar {
+    width: 220px;
+    padding: 20px;
+    background-color: #3a5a40;
+    border-right: 1px solid #ddd;
+}
+
+.sidebar h2 {
+    color: #ffffff;
+}
+
+/* Основной контент */
+.main-content {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    padding: 20px;
+    gap: 10px;
+}
+
+/* Секция для страниц блокнота */
+#pagesSection {
+    width: 36%;
+    padding: 20px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    margin-top: 10px;
+    background-color: #ddd;
+}
+
+/* Секция для задач страницы */
+#tasksSection {
+    width: 60%;
+    padding: 20px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    margin-top: 10px;
+    background-color: #ddd;
+    display: none; /* Скрываем задачи до загрузки */
+}
+
+/* Заголовки для секций */
+h2 {
+    font-size: 18px;
+    margin-bottom: 10px;
+}
+
+/* Стили для списка */
+ul {
+    list-style: none;
+    padding-left: 0;
+}
+
+li {
+    margin: 8px 0;
+}
+
+/* Кнопки */
+button {
+    padding: 8px 16px;
+    background-color: #3a5a40;
+    color: #f6f6f3;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-top: 10px;
+}
+
+button:hover {
+    background-color: #344e41;
+}
+
+button {
+    transition: background-color 0.3s ease;
+}
+
+/* Стили для элементов списка */
+.notebook-item, .page-item, .task-item {
+    padding: 8px;
+    background-color: #bfc4ac;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.notebook-item:hover, .page-item:hover, .task-item:hover {
+    background-color: #a3b18a;
+}
+
+/* Стили для контейнеров и элементов внутри */
+#pagesSection, #tasksSection {
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Общие стили для списков */
+#notebooksList li, #pagesList li, #tasksList li {
+    display: flex;
+    justify-content: space-between; /* Размещаем элементы по краям */
+    align-items: center; /* Центрируем элементы по вертикали */
+    padding: 10px;
+    background-color: #dad7cd;
+    border-radius: 4px;
+    margin-bottom: 10px;
+}
+
+/* Стили для блока с кнопками редактирования */
+#notebooksList li, #pagesList li, #tasksList li {
+    display: flex;
+    justify-content: space-between; /* Кнопка редактирования будет справа */
+    align-items: center; /* Центрируем элементы по вертикали */
+}
+
+#notebooksList li {
+    background-color: #466c4d;
+    color: white;
+}
+
+#notebooksList li:hover, #pagesList li:hover, #tasksList li:hover {
+    background-color: #bfc4ac;
+}
+
+/* Стили для кнопок редактирования */
+ul li .edit-notebook-btn,
+ul li .edit-page-btn,
+ul li .edit-task-btn {
+    margin-left: auto; /* Кнопка будет выравниваться по правому краю */
+}
